@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gourmet Share - 雲端共享美食名單 (V7)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght=300;400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer select-none" onclick="goHome()">
+                <div class="bg-white text-orange-600 p-2 rounded-xl shadow-md">
+                    <i class="fa-solid fa-cloud text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider">Gourmet Share</h1>
+                    <p class="text-xs text-amber-100 hidden sm:block">專屬我們的雲端共享美食口袋名單</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button onclick="switchTab('main-view')" id="btn-main-view" class="px-4 py-2 rounded-lg text-sm font-medium bg-amber-600/50 text-white hover:bg-amber-600 transition flex items-center space-x-1">
+                    <i class="fa-solid fa-compass"></i> <span class="hidden md:inline">探索清單</span>
+                </button>
+                <button onclick="switchTab('draw-view')" id="btn-draw-view" class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600/50 text-amber-100 transition flex items-center space-x-1">
+                    <i class="fa-solid fa-dice"></i> <span>今天吃啥</span>
+                </button>
+                <button onclick="openAddModal()" class="px-4 py-2 rounded-lg text-sm font-bold bg-white text-orange-600 hover:bg-amber-50 shadow-sm transition flex items-center space-x-1">
+                    <i class="fa-solid fa-circle-plus"></i> <span>新增餐廳</span>
+                </button>
+                <button onclick="switchTab('admin-view')" id="btn-admin-view" class="px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600/50 text-amber-100 transition flex items-center space-x-1">
+                    <i class="fa-solid fa-gears"></i> <span>管理後台</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主內容區 -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- 雲端狀態橫條 -->
+        <div id="cloud-status-banner" class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-2xl mb-6 text-xs flex justify-between items-center shadow-sm">
+            <span class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-600 text-sm" id="banner-icon"></i>
+                <span id="banner-text">系統載入中，正在從 Google 雲端試算表庫即時對接同步數據...</span>
+            </span>
+        </div>
+
+        <!-- ==================== 1. 探索清單頁面 (Main View) ==================== -->
+        <div id="main-view" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center space-x-4">
+                    <div class="border-r border-slate-100 pr-4">
+                        <span class="text-xs text-slate-400 block uppercase tracking-wider font-semibold">口袋總數</span>
+                        <span class="text-2xl font-bold text-slate-800" id="stat-total">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block uppercase tracking-wider font-semibold">平均星等</span>
+                        <span class="text-2xl font-bold text-amber-500" id="stat-rating">0.0 ★</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 md:justify-end flex-grow max-w-2xl">
+                    <div class="relative flex-grow min-w-[200px]">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                        </span>
+                        <input type="text" id="search-input" oninput="filterRestaurants()" placeholder="搜尋餐廳名稱、筆記..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none">
+                    </div>
+                    <select id="filter-category" onchange="filterRestaurants()" class="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white"></select>
+                    <select id="filter-rating" onchange="filterRestaurants()" class="border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white">
+                        <option value="all">所有評價星等</option>
+                        <option value="5">⭐⭐⭐⭐⭐ (5星)</option>
+                        <option value="4">⭐⭐⭐⭐ 以上</option>
+                        <option value="3">⭐⭐⭐ 以上</option>
+                        <option value="2">⭐⭐ 以上</option>
+                        <option value="1">⭐ 以上</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="restaurant-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <!-- ==================== 2. 今天吃啥抽籤頁面 (Draw View) ==================== -->
+        <div id="draw-view" class="tab-content hidden max-w-xl mx-auto space-y-8">
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 text-center space-y-6">
+                <h2 class="text-2xl font-black text-slate-800">今天想吃點什麼？</h2>
+                <select id="draw-category-select" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white"></select>
+                
+                <div id="draw-result-panel" class="border-2 border-dashed border-amber-200 bg-amber-50/30 rounded-2xl p-6 min-h-[180px] flex flex-col justify-center items-center">
+                    <div id="draw-placeholder" class="text-slate-400">
+                        <i class="fa-solid fa-dice text-5xl mb-2 text-amber-400"></i>
+                        <p class="text-sm">按下抽籤按鈕，開始決定！</p>
+                    </div>
+                    <div id="draw-result" class="hidden text-center space-y-2">
+                        <span id="draw-res-category" class="px-2.5 py-1 text-xs font-bold bg-amber-500 text-white rounded-full"></span>
+                        <h3 id="draw-res-name" class="text-xl font-black text-slate-800"></h3>
+                        <div id="draw-res-rating" class="text-amber-500 text-sm"></div>
+                        <p id="draw-res-notes" class="text-slate-500 text-sm italic"></p>
+                    </div>
+                </div>
+                <button id="btn-spin" onclick="spinTheWheel()" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl transition">開始抽籤！</button>
+            </div>
+        </div>
+
+        <!-- ==================== 3. 管理後台 (Admin View) ==================== -->
+        <div id="admin-view" class="tab-content hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 分類管理 -->
+                <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-fit">
+                    <h3 class="font-bold text-slate-800 mb-3">料理分類管理</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="new-category-input" placeholder="自訂新分類..." class="flex-grow border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none">
+                        <button onclick="addNewCategoryFromAdmin()" class="bg-amber-500 text-white font-bold px-4 py-2 rounded-xl text-xs">新增</button>
+                    </div>
+                    <div class="flex justify-between text-xs mb-2">
+                        <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" id="category-select-all" onchange="toggleSelectAllCategories(this)" class="w-4 h-4 text-amber-600 rounded"> 全選</label>
+                        <button onclick="deleteSelectedCategories()" class="text-rose-500 font-bold">🗑️ 刪除選取</button>
+                    </div>
+                    <div id="admin-category-list" class="divide-y divide-slate-100 max-h-[250px] overflow-y-auto"></div>
+                </div>
+
+                <!-- 餐廳管理 -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-800">口袋名單批次管理</h3>
+                        <button onclick="deleteSelectedRestaurants()" class="bg-rose-50 text-rose-600 text-xs font-bold px-3 py-1.5 rounded-xl border border-rose-200">🗑️ 刪除選取餐廳</button>
+                    </div>
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100 text-xs text-slate-400 font-bold">
+                                <th class="p-3 w-12 text-center"><input type="checkbox" id="restaurant-select-all" onchange="toggleSelectAllRestaurants(this)" class="w-4 h-4 text-amber-600 rounded"></th>
+                                <th class="p-3">名稱</th>
+                                <th class="p-3">料理分類</th>
+                                <th class="p-3">美味評價</th>
+                                <th class="p-3 text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==================== 彈出視窗：新增餐廳 ==================== -->
+    <div id="add-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl relative space-y-4">
+            <button type="button" onclick="closeAddModal()" class="absolute top-4 right-4 text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-bold text-slate-800">分享一間口袋餐廳</h3>
+            <form id="restaurant-form" onsubmit="saveRestaurant(event)" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">餐廳名稱 *</label>
+                    <input type="text" id="name" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="text-xs font-bold text-slate-400">料理分類 *</label>
+                            <button type="button" onclick="addNewCategoryPrompt()" class="text-xs text-amber-600 font-bold">+快捷新增</button>
+                        </div>
+                        <select id="category" onchange="toggleOtherCategoryRemark()" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 mb-1">美味評分 *</label>
+                        <select id="rating" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none">
+                            <option value="5">⭐⭐⭐⭐⭐ (5星 - 極推)</option>
+                            <option value="4">⭐⭐⭐⭐ (4星 - 好吃)</option>
+                            <option value="3">⭐⭐⭐ (3星 - 普通)</option>
+                            <option value="2">⭐⭐ (2星 - 踩雷)</option>
+                            <option value="1">⭐ (1星 - 極雷)</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="other-remark-group" class="hidden">
+                    <label class="block text-xs font-bold text-slate-400 mb-1">自訂分類備註 *</label>
+                    <input type="text" id="other-remark" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1">美味筆記</label>
+                    <textarea id="notes" rows="3" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none"></textarea>
+                </div>
+                <button type="submit" id="btn-submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm transition">確認送出保存</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 提示元件 -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-sm py-3 px-5 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all flex items-center space-x-2">
+        <span id="toast-msg">操作成功</span>
+    </div>
+    <div id="undo-banner" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-50 bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl hidden items-center justify-between gap-6 max-w-md w-[90%]">
+        <span class="text-xs font-bold" id="undo-banner-msg">數據已刪除！</span>
+        <button onclick="triggerUndo()" class="bg-white text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-black shadow-sm">復原</button>
+    </div>
+
+    <script>
+        // ==================== 🛠️ 雲端配置核心設定 ====================
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwg_Q44dWUS0M9cGdkR6dt7m-BqUzlH7CWACU8TZChfJyVQY-VRg0qA277QlWuK69nv/exec"; 
+        // ==========================================================
+
+        const initialCategories = ["日式", "法式", "中式", "台式", "義式", "美式", "西式", "火鍋", "燒烤", "串燒", "咖啡", "甜點", "其他"];
+        
+        let categories = JSON.parse(localStorage.getItem('gourmet_categories_v7')) || initialCategories;
+        let restaurants = JSON.parse(localStorage.getItem('gourmet_restaurants_v7')) || [];
+        let isAdminUnlocked = false;
+        let lastStateBackup = { restaurants: null, categories: null };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            refreshCategoryDropdowns();
+            renderMainList();
+            updateStats();
+            
+            if(GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("XXXXXXXXX")) {
+                loadCloudData();
+            }
+        });
+
+        function goHome() { switchTab('main-view'); }
+
+        function tryAccessAdmin() {
+            if (isAdminUnlocked) { switchTab('admin-view'); return; }
+            const pwd = prompt("請輸入管理員密碼：");
+            if (pwd === "851201") {
+                isAdminUnlocked = true;
+                showToast("🔓 管理後台解鎖成功！");
+                switchTab('admin-view');
+            } else if (pwd !== null) { showToast("❌ 密碼錯誤"); }
+        }
+
+        function switchTab(tabId) {
+            if (tabId === 'admin-view' && !isAdminUnlocked) { tryAccessAdmin(); return; }
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            const tabs = ['main-view', 'draw-view', 'admin-view'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (!btn) return;
+                if (t === tabId) {
+                    btn.className = "px-4 py-2 rounded-lg text-sm font-medium bg-amber-600/70 text-white shadow-inner transition flex items-center space-x-1";
+                } else {
+                    btn.className = "px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600/50 text-amber-100 transition flex items-center space-x-1";
+                }
+            });
+
+            if (tabId === 'main-view') renderMainList();
+            if (tabId === 'admin-view') { renderAdminTable(); renderAdminCategoryList(); }
+        }
+
+        function updateLocalAndSave() {
+            localStorage.setItem('gourmet_categories_v7', JSON.stringify(categories));
+            localStorage.setItem('gourmet_restaurants_v7', JSON.stringify(restaurants));
+            
+            refreshCategoryDropdowns();
+            renderMainList();
+            updateStats();
+            if(isAdminUnlocked) {
+                renderAdminTable();
+                renderAdminCategoryList();
+            }
+
+            if(GOOGLE_SCRIPT_URL && !GOOGLE_SCRIPT_URL.includes("XXXXXXXXX")) {
+                pushToCloud();
+            }
+        }
+
+        function loadCloudData() {
+            const banner = document.getElementById('banner-text');
+            const icon = document.getElementById('cloud-status-banner');
+            
+            banner.textContent = "🔄 正在從 Google 雲端試算表即時連線同步最新數據...";
+            icon.className = "bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-2xl mb-6 text-xs shadow-sm animate-pulse";
+            
+            fetch(`${GOOGLE_SCRIPT_URL}?action=read`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && (data.restaurants || data.categories)) {
+                        if(data.restaurants) restaurants = data.restaurants;
+                        if(data.categories) categories = data.categories;
+                        
+                        localStorage.setItem('gourmet_categories_v7', JSON.stringify(categories));
+                        localStorage.setItem('gourmet_restaurants_v7', JSON.stringify(restaurants));
+                        
+                        refreshCategoryDropdowns();
+                        renderMainList();
+                        updateStats();
+                        
+                        banner.textContent = `🟢 雲端同步成功！本網頁已與您的 Google Drive 試算表保持跨裝置即時串聯。`;
+                        icon.className = "bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-2xl mb-6 text-xs shadow-sm";
+                    }
+                })
+                .catch(err => {
+                    banner.textContent = `⚠️ 雲端讀取失敗。目前使用【離線本地安全模式】，您依然可以正常自由新增與修改餐廳。`;
+                    icon.className = "bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-2xl mb-6 text-xs shadow-sm";
+                });
+        }
+
+        function pushToCloud() {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ restaurants: restaurants, categories: categories })
+            })
+            .then(() => { showToast("☁️ 資料已即時同步備份至 Google 雲端試算表！"); })
+            .catch(() => { showToast("⚠️ 雲端連線失敗，已先將資料安全保存在本機裝置。"); });
+        }
+
+        function refreshCategoryDropdowns() {
+            const formSelect = document.getElementById('category');
+            const filterSelect = document.getElementById('filter-category');
+            const drawSelect = document.getElementById('draw-category-select');
+
+            formSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            filterSelect.innerHTML = '<option value="all">所有料理分類</option>' + categories.map(c => `<option value="${c}">${c}料理</option>`).join('');
+            drawSelect.innerHTML = '<option value="all">🎲 隨機所有分類</option>' + categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function addNewCategoryPrompt() {
+            const newCat = prompt("請輸入想要新增的料理分類名稱：(例如: 泰式, 港式, 韓式...)");
+            if (!newCat) return;
+            const trimmed = newCat.trim();
+            if (trimmed === "" || categories.includes(trimmed)) return;
+
+            const otherIndex = categories.indexOf("其他");
+            if (otherIndex !== -1) categories.splice(otherIndex, 0, trimmed);
+            else categories.push(trimmed);
+
+            updateLocalAndSave();
+            document.getElementById('category').value = trimmed;
+            toggleOtherCategoryRemark();
+            showToast(`✨ 成功新增分類「${trimmed}」！`);
+        }
+
+        function addNewCategoryFromAdmin() {
+            const input = document.getElementById('new-category-input');
+            const v = input.value.trim();
+            if(!v || categories.includes(v)) return;
+            
+            categories.splice(categories.includes("其他") ? categories.indexOf("其他") : categories.length, 0, v);
+            updateLocalAndSave();
+            input.value = "";
+            showToast(`✨ 成功新增分類 「${v}」`);
+        }
+
+        function deleteSelectedCategories() {
+            const selected = Array.from(document.getElementsByName('admin-category-checkbox')).filter(c => c.checked).map(c => c.value);
+            if(!selected.length) return;
+            if(confirm(`確定刪除這 ${selected.length} 個料理分類？`)) {
+                createUndoBackup("已刪除所選料理分類！");
+                categories = categories.filter(c => !selected.includes(c));
+                updateLocalAndSave();
+            }
+        }
+
+        function toggleSelectAllCategories(m) { document.getElementsByName('admin-category-checkbox').forEach(c => c.checked = m.checked); }
+
+        function toggleOtherCategoryRemark() {
+            const isOther = document.getElementById('category').value === '其他';
+            document.getElementById('other-remark-group').className = isOther ? 'block' : 'hidden';
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = restaurants.length;
+            const avg = restaurants.length ? (restaurants.reduce((s, r) => s + r.rating, 0) / restaurants.length).toFixed(1) : '0.0';
+            document.getElementById('stat-rating').textContent = `${avg} ★`;
+        }
+
+        function renderMainList(dataList = null) {
+            const container = document.getElementById('restaurant-cards-container');
+            container.innerHTML = '';
+            const list = dataList || restaurants;
+
+            if (!list.length) {
+                container.innerHTML = `<div class="col-span-full text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400 text-sm">目前尚無餐廳數據，點擊「新增餐廳」分享一個吧！</div>`;
+                return;
+            }
+
+            list.forEach(r => {
+                const showCat = r.category === '其他' ? `其他(${r.remark || ''})` : r.category;
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition">
+                        <div class="space-y-2">
+                            <span class="bg-amber-50 text-amber-600 text-xs font-bold px-2.5 py-1 rounded-full">${showCat}</span>
+                            <h3 class="text-lg font-black text-slate-800">${r.name}</h3>
+                            <div class="text-amber-400 text-sm">${'★'.repeat(r.rating || 5)}${'☆'.repeat(5 - (r.rating || 5))}</div>
+                            <p class="text-slate-500 text-sm whitespace-pre-wrap leading-relaxed">${r.notes || '暫無美味筆記...'}</p>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function filterRestaurants() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const cat = document.getElementById('filter-category').value;
+            const ratingTerm = document.getElementById('filter-rating').value;
+
+            const filtered = restaurants.filter(r => {
+                const matchSearch = r.name.toLowerCase().includes(search) || r.notes.toLowerCase().includes(search);
+                const matchCategory = cat === 'all' || r.category === cat;
+                
+                let matchRating = true;
+                if (ratingTerm !== 'all') {
+                    const rValue = parseInt(ratingTerm);
+                    if (ratingTerm === '5') matchRating = r.rating === 5;
+                    else matchRating = r.rating >= rValue;
+                }
+                return matchSearch && matchCategory && matchRating;
+            });
+            renderMainList(filtered);
+        }
+
+        function saveRestaurant(event) {
+            event.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const data = {
+                id: id || Date.now().toString(),
+                name: document.getElementById('name').value.trim(),
+                category: document.getElementById('category').value,
+                rating: parseInt(document.getElementById('rating').value),
+                remark: document.getElementById('other-remark').value.trim(),
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            if(id) {
+                const idx = restaurants.findIndex(r => r.id === id);
+                if(idx !== -1) restaurants[idx] = data;
+            } else {
+                restaurants.push(data);
+            }
+
+            updateLocalAndSave();
+            closeAddModal();
+            showToast("✍️ 餐廳清單儲存成功！");
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = restaurants.map(r => `
+                <tr class="hover:bg-slate-50/50">
+                    <td class="p-3 text-center"><input type="checkbox" name="admin-restaurant-checkbox" value="${r.id}" class="w-4 h-4 text-amber-600 rounded"></td>
+                    <td class="p-3 font-semibold text-slate-800">${r.name}</td>
+                    <td class="p-3 text-xs text-slate-500">${r.category}</td>
+                    <td class="p-3 text-amber-500 text-xs">${'★'.repeat(r.rating || 5)}</td>
+                    <td class="p-3 text-right"><button onclick="deleteSingleRestaurant('${r.id}')" class="text-rose-500 text-xs font-bold hover:underline">刪除</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function deleteSingleRestaurant(id) {
+            if(confirm('確定要永久刪除這家餐廳嗎？')) {
+                createUndoBackup("已刪除單間餐廳數據！");
+                restaurants = restaurants.filter(r => r.id !== id);
+                updateLocalAndSave();
+            }
+        }
+
+        function deleteSelectedRestaurants() {
+            const selected = Array.from(document.getElementsByName('admin-restaurant-checkbox')).filter(c => c.checked).map(c => c.value);
+            if(!selected.length) return;
+            if(confirm(`確定刪除這 ${selected.length} 間選取餐廳？`)) {
+                createUndoBackup("已成功批次刪除餐廳！");
+                restaurants = restaurants.filter(r => !selected.includes(r.id));
+                updateLocalAndSave();
+            }
+        }
+
+        function toggleSelectAllRestaurants(m) { document.getElementsByName('admin-restaurant-checkbox').forEach(c => c.checked = m.checked); }
+
+        function renderAdminCategoryList() {
+            document.getElementById('admin-category-list').innerHTML = categories.map(c => `
+                <div class="flex items-center justify-between py-2 hover:bg-slate-50 px-1 rounded transition text-sm">
+                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="admin-category-checkbox" value="${c}" class="w-4 h-4 text-amber-600 rounded"> <span>${c}</span></label>
+                </div>
+            `).join('');
+        }
+
+        function createUndoBackup(m) {
+            lastStateBackup.restaurants = JSON.parse(JSON.stringify(restaurants));
+            lastStateBackup.categories = JSON.parse(JSON.stringify(categories));
+            document.getElementById('undo-banner-msg').textContent = m;
+            document.getElementById('undo-banner').classList.remove('hidden');
+            document.getElementById('undo-banner').classList.add('flex');
+            setTimeout(() => document.getElementById('undo-banner').classList.add('hidden'), 8000);
+        }
+
+        function triggerUndo() {
+            if(lastStateBackup.restaurants) restaurants = lastStateBackup.restaurants;
+            if(lastStateBackup.categories) categories = lastStateBackup.categories;
+            updateLocalAndSave();
+            document.getElementById('undo-banner').classList.add('hidden');
+            showToast("✨ 資料已成功重組復原！");
+        }
+
+        function openAddModal() { resetForm(); document.getElementById('add-modal').classList.remove('hidden'); document.getElementById('add-modal').classList.add('flex'); }
+        function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
+
+        function spinTheWheel() {
+            const cat = document.getElementById('draw-category-select').value;
+            const pool = cat === 'all' ? restaurants : restaurants.filter(r => r.category === cat);
+            if(!pool.length) { showToast("⚠️ 此分類下目前沒有餐廳數據"); return; }
+            
+            let i = 0;
+            const btn = document.getElementById('btn-spin');
+            btn.disabled = true;
+            document.getElementById('draw-placeholder').classList.remove('hidden');
+            document.getElementById('draw-result').classList.add('hidden');
+
+            const timer = setInterval(() => {
+                const rand = pool[Math.floor(Math.random() * pool.length)];
+                document.getElementById('draw-placeholder').innerHTML = `<p class="text-xl font-black text-amber-600">${rand.name}</p>`;
+                if(i++ > 10) {
+                    clearInterval(timer);
+                    const winner = pool[Math.floor(Math.random() * pool.length)];
+                    document.getElementById('draw-placeholder').classList.add('hidden');
+                    document.getElementById('draw-result').classList.remove('hidden');
+                    document.getElementById('draw-res-category').textContent = winner.category;
+                    document.getElementById('draw-res-name').textContent = winner.name;
+                    document.getElementById('draw-res-rating').innerHTML = '★'.repeat(winner.rating || 5);
+                    document.getElementById('draw-res-notes').textContent = winner.notes || "推薦親自品嚐！";
+                    btn.disabled = false;
+                }
+            }, 100);
+        }
+
+        function resetForm() {
+            document.getElementById('restaurant-form').reset();
+            document.getElementById('edit-id').value = "";
+            document.getElementById('other-remark-group').className = 'hidden';
+        }
+
+        function showToast(m) {
+            const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = m;
+            t.classList.remove('translate-y-20', 'opacity-0'); t.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => { t.classList.remove('translate-y-0', 'opacity-100'); t.classList.add('translate-y-20', 'opacity-0'); }, 3000);
+        }
+    </script>
+</body>
+</html>
